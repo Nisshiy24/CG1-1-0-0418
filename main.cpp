@@ -2,6 +2,14 @@
 #include <cstdint>
 #include <string>
 #include <format>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <cassert>
+
+
+
+#pragma comment(lib, "d3d12.lib")
+#pragma	comment(lib, "dxgi.lib")
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
@@ -50,16 +58,23 @@ std::string ConvertString(const std::wstring& str) {
 
 
 
+
+
+
 void Log(const std::string& message) {
 	OutputDebugStringA(message.c_str());
 }
 
 
 
+void Log(const std::wstring& message) {
+	OutputDebugStringA(ConvertString(message).c_str());
+}
 
-std::string str0{ "STRING!!!" };
 
-std::string str1{ std::to_string(10) };
+
+
+
 
 
 
@@ -116,6 +131,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
+	IDXGIFactory7* dxgiFactory = nullptr;
+
+	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+
+	assert(SUCCEEDED(hr));
+
+
+
 	MSG msg{};
 
 	while (msg.message != WM_QUIT) {
@@ -128,6 +151,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 	}
 	
+
+	IDXGIAdapter4* useAdapter = nullptr;
+
+	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter)) !=
+		DXGI_ERROR_NOT_FOUND; ++i) {
+
+		DXGI_ADAPTER_DESC3 adapterDesc{ };
+		hr = useAdapter->GetDesc3(&adapterDesc);
+		assert(SUCCEEDED(hr));
+
+		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
+			Log(std::format(L"Use Adapater:{}\n", adapterDesc.Description));
+			break;
+		}
+		useAdapter = nullptr;
+	}
+	assert(useAdapter != nullptr);
+
+
+
+
+	ID3D12Device* device = nullptr;
+
+	D3D_FEATURE_LEVEL featureLevels[] = {
+		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0
+	};
+
+	const char* featureLevelStrings[] = { "12.0", "12.1", "12.0" };
+
+	for (size_t i = 0; i < _countof(featureLevels); ++i) {
+		hr = D3D12CreateDevice(useAdapter, featureLevels[i], IID_PPV_ARGS(&device));
+		if (SUCCEEDED(hr)) {
+			
+			Log(std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+			break;
+		}
+	}
+
+	assert(device != nullptr);
+	Log("Complete create D3D12Device!!!\n");
+
+	
+
+
 
 	return 0;
 }
