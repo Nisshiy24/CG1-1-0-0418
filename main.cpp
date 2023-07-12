@@ -7,6 +7,7 @@
 #include <cassert>
 #include <dxgidebug.h>
 #include <dxcapi.h>
+#include <math.h>
 
 
 
@@ -20,6 +21,102 @@ struct Vector4
 {
 	float x, y, r, z;
 };
+
+struct Vector3
+{
+	float x, y, z;
+};
+
+//struct Matrix4x4
+//{
+//	float m[4][4];
+//};
+//
+//struct Transform {
+//	Vector3 scale;
+//	Vector3 rotate;
+//	Vector3 translate;
+//};
+//
+//
+//Transform cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f} };
+//
+//
+//
+//Matrix4x4 MakeRotateXMatrix(float radian)
+//{
+//	float cosTheta = std::cos(radian);
+//	float sinTheta = std::sin(radian);
+//	return { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, cosTheta, sinTheta, 0.0f, 0.0f, -sinTheta, cosTheta, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+//}
+//
+//Matrix4x4 MakeRotateYMatrix(float radian)
+//{
+//	float cosTheta = std::cos(radian);
+//	float sinTheta = std::sin(radian);
+//	return { cosTheta, 0.0f, -sinTheta, 0.0f, 0.0f, 1.0f,0.0f, 0.0f, sinTheta, 0.0f, cosTheta, 0.0f, 0.0f, 0.0f, 0.0f,1.0f };
+//}
+//
+//Matrix4x4 MakeRottateZMatrix(float radian)
+//{
+//	float cosTheta = std::cos(radian);
+//	float sinTheta = std::sin(radian);
+//	return { cosTheta, sinTheta, 0.0f, 0.0f, -sinTheta, cosTheta, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+//}
+//
+//
+//
+//
+//Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
+//{
+//	Matrix4x4 result;
+//	result.m[0][0] = m1.m[0][0] * m2.m[0][0] + m1.m[0][1] * m2.m[1][0] + m1.m[0][2] * m2.m[2][0] + m1.m[0][3] * m2.m[3][0];
+//	result.m[0][1] = m1.m[0][0] * m2.m[0][1] + m1.m[0][1] * m2.m[1][1] + m1.m[0][2] * m2.m[2][1] + m1.m[0][3] * m2.m[3][1];
+//	result.m[0][2] = m1.m[0][0] * m2.m[0][2] + m1.m[0][1] * m2.m[1][2] + m1.m[0][2] * m2.m[2][2] + m1.m[0][3] * m2.m[3][2];
+//	result.m[0][3] = m1.m[0][0] * m2.m[0][3] + m1.m[0][1] * m2.m[1][3] + m1.m[0][2] * m2.m[2][3] + m1.m[0][3] * m2.m[3][3];
+//	result.m[1][0] = m1.m[1][0] * m2.m[0][0] + m1.m[1][1] * m2.m[1][0] + m1.m[1][2] * m2.m[2][0] + m1.m[1][3] * m2.m[3][0];
+//	result.m[1][1] = m1.m[1][0] * m2.m[0][1] + m1.m[1][1] * m2.m[1][1] + m1.m[1][2] * m2.m[2][1] + m1.m[1][3] * m2.m[3][1];
+//	result.m[1][2] = m1.m[1][0] * m2.m[0][2] + m1.m[1][1] * m2.m[1][2] + m1.m[1][2] * m2.m[2][2] + m1.m[1][3] * m2.m[3][2];
+//	result.m[1][3] = m1.m[1][0] * m2.m[0][3] + m1.m[1][1] * m2.m[1][3] + m1.m[1][2] * m2.m[2][3] + m1.m[1][3] * m2.m[3][3];
+//	result.m[2][0] = m1.m[2][0] * m2.m[0][0] + m1.m[2][1] * m2.m[1][0] + m1.m[2][2] * m2.m[2][0] + m1.m[2][3] * m2.m[3][0];
+//	result.m[2][1] = m1.m[2][0] * m2.m[0][1] + m1.m[2][1] * m2.m[1][1] + m1.m[2][2] * m2.m[2][1] + m1.m[2][3] * m2.m[3][1];
+//	result.m[2][2] = m1.m[2][0] * m2.m[0][2] + m1.m[2][1] * m2.m[1][2] + m1.m[2][2] * m2.m[2][2] + m1.m[2][3] * m2.m[3][2];
+//	result.m[2][3] = m1.m[2][0] * m2.m[0][3] + m1.m[2][1] * m2.m[1][3] + m1.m[2][2] * m2.m[2][3] + m1.m[2][3] * m2.m[3][3];
+//	result.m[3][0] = m1.m[3][0] * m2.m[0][0] + m1.m[3][1] * m2.m[1][0] + m1.m[3][2] * m2.m[2][0] + m1.m[3][3] * m2.m[3][0];
+//	result.m[3][1] = m1.m[3][0] * m2.m[0][1] + m1.m[3][1] * m2.m[1][1] + m1.m[3][2] * m2.m[2][1] + m1.m[3][3] * m2.m[3][2];
+//	result.m[3][2] = m1.m[3][0] * m2.m[0][2] + m1.m[3][1] * m2.m[1][2] + m1.m[3][2] * m2.m[2][2] + m1.m[3][3] * m2.m[3][2];
+//	result.m[3][3] = m1.m[3][0] * m2.m[0][3] + m1.m[3][1] * m2.m[1][3] + m1.m[3][2] * m2.m[2][3] + m1.m[3][3] * m2.m[3][3];
+//
+//	return result;
+//}
+//
+//
+//Matrix4x4 MakeAffinMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate)
+//{
+//
+//	Matrix4x4 result = Multiply(
+//		Multiply(MakeRotateXMatrix(rotate.x), MakeRotateYMatrix(rotate.y)),
+//		MakeRottateZMatrix(rotate.z));
+//	result.m[0][0] *= scale.x;
+//	result.m[0][1] *= scale.x;
+//	result.m[0][2] *= scale.x;
+//
+//	result.m[1][0] *= scale.y;
+//	result.m[1][1] *= scale.y;
+//	result.m[1][2] *= scale.y;
+//
+//	result.m[2][0] *= scale.z;
+//	result.m[2][1] *= scale.z;
+//	result.m[2][2] *= scale.z;
+//
+//	result.m[3][0] *= scale.x;
+//	result.m[3][1] *= scale.y;
+//	result.m[3][2] *= scale.z;
+//	return result;
+//
+//}
+
+
 
 
 
@@ -228,8 +325,27 @@ ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
 		IID_PPV_ARGS(&resource));
 	assert(SUCCEEDED(hr));
 	return resource;
-
+	
 }
+
+
+//commandList->SetGraphicsRootConstantBufferView(1, wvpResouce->GetGPUVirtualAddress());
+
+//
+////Transform変数を作る
+//Transform transform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+
+
+//
+//Matrix4x4 worldMatrix = MakeAffinMatrix(transform.scale, transform.rotate, transform.translate);
+//Matrix4x4 cameraMatrix = MakeAffinMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+//Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kCientWidth) / float(kClientHight), 0.1f, 100.0f);
+//Matrix4x4 worldViewPrijectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+//*transformationMatrixData = worldViewPrijectionMatrix;
+
+
 
 
 
@@ -570,6 +686,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	//レジ下番号0とバインド
 	rootParameters[0].Descriptor.ShaderRegister = 0;
+	////CBVを使う
+	//rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	////VertexShaderで使う
+	//rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	////レジスタ番号0を使う
+	//rootParameters[1].Descriptor.ShaderRegister = 0;
 	//ルートパラメータ配列へのポインタ
 	descriptionRootSignature.pParameters = rootParameters;
 	//配列の長さ
@@ -784,6 +906,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
+	
+
+
+
+
 
 	//ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -809,6 +936,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 
 
+	////WVP用のリソースを作る。 Matrix4x4 1つ分のサイズを用意する
+	//ID3D12Resource* wvpResouce = CreateBufferResource(device, sizeof(Matrix4x4));
+	////データを書き込む
+	//Matrix4x4* wvpData = nullptr;
+	////書き込むためのアドレスを取得
+	//wvpResouce->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+	////単位行列を書き込んでおく
+	//*wvpData = MakeIdentity4x4();
+
+
+	
+	////wvp用のCBufferの場所を設定
+	//commandList->SetGraphicsRootConstantBufferView(1, wvpResouce->GetGPUVirtualAddress());
+
+
+
+	//transform.rotate.y += 0.03f;
+	//Matrix4x4 worldMatrix = MakeAffinMatrix(transform.scale, transform.rotate, transform.translate);
+	//*wvpData = worldMatrix;
+
+
+
+
+	//Matrix4x4 projectionMatrix = MakePerspectiveForMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 
 
 
@@ -910,22 +1061,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandQueue->ExecuteCommandLists(1, commandLists);
 
 			swapChain->Present(1, 0);
-
-	
-
-
-
-
-
-
-			
-
-
-
-		
-
-
-
 
 
 			//Fenceの値を更新
