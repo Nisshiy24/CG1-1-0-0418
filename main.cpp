@@ -8,6 +8,10 @@
 #include <dxgidebug.h>
 #include <dxcapi.h>
 #include <math.h>
+#include "externals/imgui/imgui.h"
+#include "externals/imgui/imgui_impl_dx12.h"
+#include "externals/imgui/imgui_impl_win32.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 
@@ -124,6 +128,12 @@ struct Vector3
 
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+		return true;
+	}
+
+
 
 	switch (msg) {
 	case WM_DESTROY:
@@ -344,6 +354,22 @@ ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
 //Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kCientWidth) / float(kClientHight), 0.1f, 100.0f);
 //Matrix4x4 worldViewPrijectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 //*transformationMatrixData = worldViewPrijectionMatrix;
+
+
+ID3D12DescriptorHeap* CreateDescriptorHeap(
+	ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
+{
+	ID3D12DescriptorHeap* descriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.Type = heapType;
+	descriptorHeapDesc.NumDescriptors = numDescriptors;
+	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	HRESULT hr  = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
+	assert(SUCCEEDED(hr));
+	return descriptorHeap;
+}
+
+
 
 
 
@@ -582,7 +608,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
+	//ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
+	//RTV用のヒープでディスクリプタの数は２。　RTVはshader内で触るものではないので、shadervisibleはfalse
+	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+
+
+	//SRV用のヒープでディスクリプタの数は128。　SRVはshader内で触るものではないので、shaderVisibleはtrue
+	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+
 	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
 	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvDescriptorHeapDesc.NumDescriptors = 2;
@@ -618,6 +651,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rtvHandles[1].ptr = rtvHandles[0].ptr + device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	device->CreateRenderTargetView(swapChainResources[1], &rtvDesc, rtvHandles[1]);
+
+
+
+
+
+
+
 
 
 
@@ -971,7 +1011,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
+//	//ImGuiの初期化。詳細はさして重要ではないので省略する。
+////こういうもんである
+//	IMGUI_CHECKVERSION();
+//	ImGui::CreateContext();
+//	ImGui::StyleColorsDark();
+//	ImGui_ImplWin32_Init(hwnd);
+//	ImGui_ImplDX12_Init(device,
+//		swapChainDesc, BufferCount,
+//		rtvDesc.Format,
+//		srvDescriptorHeap,
+//		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+//		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
+
+
+
+
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+
+	//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
+	ImGui::ShowDemoWindow();
+
+	//ImGuiの内部コマンドを生成する
+	ImGui::Render();
 
 
 
@@ -986,7 +1052,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else {
 
 
-		
+		//実際のcommandListのImGuiの描画コマンドを積む
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
 
 
@@ -1022,6 +1089,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };
 			commandList->ClearRenderTargetView(rtvHandles[BackBufferIndex], clearColor, 0, nullptr);
 
+
+
+			//描画用のDescriptorHeapの設定
+			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
+			commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 
 
