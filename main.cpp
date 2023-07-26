@@ -15,6 +15,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 
 
+
 #pragma comment(lib, "d3d12.lib")
 #pragma	comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -936,7 +937,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	
-
+	Vector4 color = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
 
 	//マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
 	ID3D12Resource* materialResouce = CreateBufferResource(device, sizeof(Vector4));
@@ -945,7 +946,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//書き込むためのアドレスを取得
 	materialResouce->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	//今回は赤を書き込んでみる
-	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+	//*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+
+	
 
 
 
@@ -1020,16 +1023,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	ImGui_ImplDX12_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
+	
 
 
-	//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
-	ImGui::ShowDemoWindow();
+	
 
-	//ImGuiの内部コマンドを生成する
-	ImGui::Render();
+	
 
 
 
@@ -1041,7 +1040,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui::StyleColorsDark();
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX12_Init(device,
-		swapChainDesc, BufferCount,
+		swapChainDesc.BufferCount,
 		rtvDesc.Format,
 		srvDescriptorHeap,
 		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
@@ -1059,10 +1058,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else {
 
 
-		//実際のcommandListのImGuiの描画コマンドを積む
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
 
 
+			//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
+			ImGui::ShowDemoWindow();
+
+		////実際のcommandListのImGuiの描画コマンドを積む
+		//	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
+			*materialData = color;
 
 			UINT BackBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -1117,8 +1124,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-			//実際のcommandListのImguiの描画コマンドを積む
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+			
 
 
 			//viewportを設定
@@ -1139,9 +1145,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//描画！（DrawCall/ドローコール）。3頂点で一つのインスタンス。インスタンスについては今後
 			commandList->DrawInstanced(3, 1, 0, 0);
 
+			ImGui::Begin("window");
+
+			ImGui::ColorEdit3("color", &color.x);
+		
+
+			ImGui::End();
+
+			//ImGuiの内部コマンドを生成する
+			ImGui::Render();
+
+
 			//画面に書く処理はすべて終わり、画面に映すので、状態を遷移
 			//今回はRenderTargetkaraからPreasentにする
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+			//実際のcommandListのImguiの描画コマンドを積む
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
 			//TransitionBarrierを張る
